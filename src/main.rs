@@ -1,11 +1,18 @@
 use rsm::{balances, system};
 
+mod types {
+	pub type AccountId = String;
+	pub type Balance = u128;
+	pub type BlockNumber = u32;
+	pub type Nonce = u32;
+}
+
 // This is our main Runtime.
 // It accumulates all of the different pallets we want to use.
 #[derive(Debug)]
 pub struct Runtime {
-	system: system::Pallet,
-	balances: balances::Pallet,
+	system: system::Pallet<Self>,
+	balances: balances::Pallet<Self>,
 }
 
 impl Runtime {
@@ -13,6 +20,16 @@ impl Runtime {
 	fn new() -> Self {
 		Self { system: system::Pallet::new(), balances: balances::Pallet::new() }
 	}
+}
+
+impl system::Config for Runtime {
+	type AccountId = types::AccountId;
+	type Nonce = types::Nonce;
+	type BlockNumber = types::BlockNumber;
+}
+
+impl balances::Config for Runtime {
+	type Balance = types::Balance;
 }
 
 fn main() {
