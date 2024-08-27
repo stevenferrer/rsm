@@ -1,6 +1,8 @@
 use num::{CheckedAdd, CheckedSub, Zero};
 use std::collections::BTreeMap;
 
+use crate::support::DispatchResult;
+
 pub trait Config: crate::system::Config {
 	type Balance: CheckedAdd + CheckedSub + Zero + Copy;
 }
@@ -28,7 +30,7 @@ impl<T: Config> Pallet<T> {
 		source: T::AccountId,
 		dest: T::AccountId,
 		amount: T::Balance,
-	) -> Result<(), &'static str> {
+	) -> DispatchResult {
 		let source_bal = self.balance(&source);
 		let dest_bal = self.balance(&dest);
 
@@ -37,6 +39,30 @@ impl<T: Config> Pallet<T> {
 
 		self.set_balance(&source, new_source_bal);
 		self.set_balance(&dest, new_dest_bal);
+
+		Ok(())
+	}
+}
+
+// A public enum which describes the calls we want to expose to the dispatcher.
+// We should expect that the caller of each call will be provided by the dispatcher,
+// and not included as a parameter of the call.
+pub enum Call<T: Config> {
+	Transfer { to: T::AccountId, amount: T::Balance },
+}
+
+/// Implementation of the dispatch logic, mapping from `BalancesCall` to the appropriate underlying
+/// function we want to execute.
+impl<T: Config> crate::support::Dispatch for Pallet<T> {
+	type Caller = T::AccountId;
+	type Call = Call<T>;
+
+	fn dispatch(&mut self, caller: Self::Caller, call: Self::Call) -> DispatchResult {
+		match call {
+			Call::Transfer { to, amount } => {
+				self.transfer(caller, to, amount)?;
+			},
+		}
 
 		Ok(())
 	}
