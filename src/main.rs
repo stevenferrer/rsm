@@ -1,5 +1,5 @@
 use rsm::{
-	balances,
+	balances, poe,
 	support::{self, Dispatch},
 	system,
 };
@@ -14,12 +14,14 @@ mod types {
 	pub type Extrinsic = support::Extrinsic<AccountId, crate::RuntimeCall>;
 	pub type Header = support::Header<BlockNumber>;
 	pub type Block = support::Block<Header, Extrinsic>;
+	pub type Content = &'static str;
 }
 
 // These are all the calls which are exposed to the world.
 // Note that it is just an accumulation of the calls exposed by each module.
 pub enum RuntimeCall {
 	Balances(balances::Call<Runtime>),
+	PoE(poe::Call<Runtime>),
 }
 
 // This is our main Runtime.
@@ -28,6 +30,7 @@ pub enum RuntimeCall {
 pub struct Runtime {
 	system: system::Pallet<Self>,
 	balances: balances::Pallet<Self>,
+	poe: poe::Pallet<Self>,
 }
 
 impl system::Config for Runtime {
@@ -40,10 +43,18 @@ impl balances::Config for Runtime {
 	type Balance = types::Balance;
 }
 
+impl poe::Config for Runtime {
+	type Content = types::Content;
+}
+
 impl Runtime {
 	// Create a new instance of the main Runtime, by creating a new instance of each pallet.
 	fn new() -> Self {
-		Self { system: system::Pallet::new(), balances: balances::Pallet::new() }
+		Self {
+			system: system::Pallet::new(),
+			balances: balances::Pallet::new(),
+			poe: poe::Pallet::new(),
+		}
 	}
 
 	// Execute a block of extrinsics. Increments the block number.
@@ -83,7 +94,12 @@ impl crate::support::Dispatch for Runtime {
 		runtime_call: Self::Call,
 	) -> support::DispatchResult {
 		match runtime_call {
-			RuntimeCall::Balances(call) => self.balances.dispatch(caller, call)?,
+			RuntimeCall::Balances(call) => {
+				self.balances.dispatch(caller, call)?;
+			},
+			RuntimeCall::PoE(call) => {
+				self.poe.dispatch(caller, call)?;
+			},
 		}
 
 		Ok(())
@@ -110,13 +126,43 @@ fn main() {
 				}),
 			},
 			support::Extrinsic {
-				caller: alice,
+				caller: alice.clone(),
 				call: RuntimeCall::Balances(balances::Call::Transfer { to: charlie, amount: 20 }),
 			},
 		],
 	};
 
+	let block_2 = types::Block {
+		header: support::Header { block_number: 2 },
+		extrinsics: vec![
+			support::Extrinsic {
+				caller: alice.clone(),
+				call: RuntimeCall::PoE(poe::Call::CreateClaim { claim: "Hello, world!" }),
+			},
+			support::Extrinsic {
+				caller: bob.clone(),
+				call: RuntimeCall::PoE(poe::Call::CreateClaim { claim: "Hello, world!" }),
+			},
+		],
+	};
+
+	let block_3 = types::Block {
+		header: support::Header { block_number: 3 },
+		extrinsics: vec![
+			support::Extrinsic {
+				caller: alice,
+				call: RuntimeCall::PoE(poe::Call::RevokeClaim { claim: "Hello, world!" }),
+			},
+			support::Extrinsic {
+				caller: bob,
+				call: RuntimeCall::PoE(poe::Call::CreateClaim { claim: "Hello, world!" }),
+			},
+		],
+	};
+
 	rt.execute_block(block_1).expect("invalid block");
+	rt.execute_block(block_2).expect("invalid block");
+	rt.execute_block(block_3).expect("invalid block");
 
 	println!("{:#?}", rt);
 }
