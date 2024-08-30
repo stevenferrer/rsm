@@ -137,11 +137,11 @@ fn main() {
 		extrinsics: vec![
 			support::Extrinsic {
 				caller: alice.clone(),
-				call: RuntimeCall::PoE(poe::Call::CreateClaim { claim: "Hello, world!" }),
+				call: RuntimeCall::PoE(poe::Call::create_claim { claim: "Hello, world!" }),
 			},
 			support::Extrinsic {
 				caller: bob.clone(),
-				call: RuntimeCall::PoE(poe::Call::CreateClaim { claim: "Hello, world!" }),
+				call: RuntimeCall::PoE(poe::Call::create_claim { claim: "Hello, world!" }),
 			},
 		],
 	};
@@ -151,11 +151,11 @@ fn main() {
 		extrinsics: vec![
 			support::Extrinsic {
 				caller: alice,
-				call: RuntimeCall::PoE(poe::Call::RevokeClaim { claim: "Hello, world!" }),
+				call: RuntimeCall::PoE(poe::Call::revoke_claim { claim: "Hello, world!" }),
 			},
 			support::Extrinsic {
 				caller: bob,
-				call: RuntimeCall::PoE(poe::Call::CreateClaim { claim: "Hello, world!" }),
+				call: RuntimeCall::PoE(poe::Call::revoke_claim { claim: "Hello, world!" }),
 			},
 		],
 	};

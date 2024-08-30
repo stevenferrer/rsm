@@ -28,7 +28,10 @@ impl<T: Config> Pallet<T> {
 	pub fn get_claim(&self, claim: &T::Content) -> Option<&T::AccountId> {
 		self.claims.get(claim)
 	}
+}
 
+#[macros::call]
+impl<T: Config> Pallet<T> {
 	/// Create a new claim on behalf of the `caller`.
 	/// This function will return an error if someone already has claimed that content.
 	pub fn create_claim(&mut self, caller: T::AccountId, claim: T::Content) -> DispatchResult {
@@ -53,29 +56,6 @@ impl<T: Config> Pallet<T> {
 		}
 		// If all checks pass, then `remove` the `claim`.
 		self.claims.remove(&claim);
-
-		Ok(())
-	}
-}
-
-pub enum Call<T: Config> {
-	CreateClaim { claim: T::Content },
-	RevokeClaim { claim: T::Content },
-}
-
-impl<T: Config> crate::support::Dispatch for Pallet<T> {
-	type Caller = T::AccountId;
-	type Call = Call<T>;
-
-	fn dispatch(&mut self, caller: Self::Caller, call: Self::Call) -> DispatchResult {
-		match call {
-			Call::CreateClaim { claim } => {
-				self.create_claim(caller, claim)?;
-			},
-			Call::RevokeClaim { claim } => {
-				self.revoke_claim(caller, claim)?;
-			},
-		};
 
 		Ok(())
 	}
